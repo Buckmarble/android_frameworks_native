@@ -77,6 +77,9 @@
 
 #include "RenderEngine/RenderEngine.h"
 #include <cutils/compiler.h>
+#ifdef QCOM_BSP
+#include "cb_swap_rect.h"
+#endif
 
 #ifdef SAMSUNG_HDMI_SUPPORT
 #include "SecTVOutService.h"
@@ -3425,6 +3428,10 @@ void SurfaceFlinger::setupSwapRect()
     HWComposer& hwc(getHwComposer());
     const LayerVector& currentLayers(mDrawingState.layersSortedByZ);
     size_t count = currentLayers.size();
+#ifdef QCOM_BSP
+    qdutils::cb_swap_rect::getInstance().setSwapRectFeature_on(false);
+#endif
+    hwc.setSwapRectOn(false);
 
     if (mSwapRectEnable && hwc.hasHwcComposition(HWC_DISPLAY_PRIMARY)) {
         int  totalDirtyRects = 0;
@@ -3459,9 +3466,13 @@ void SurfaceFlinger::setupSwapRect()
         //If SwapRect is enabled, dirtyLayerIdx would be set to the layer's idx
         if(dirtyLayerIdx != -1)  {
             /*
-            * Create dirty layer work list to be used by HWComposer instead of
-            * visible layer work list
-            */
+             * Create dirty layer work list to be used by HWComposer instead of
+             * visible layer work list
+             */
+#ifdef QCOM_BSP
+           qdutils::cb_swap_rect::getInstance().setSwapRectFeature_on(true);
+#endif
+            hwc.setSwapRectOn(true);
             hwc.setSwapRect(swapDirtyRect);
             invalidateHwcGeometry();
         }
