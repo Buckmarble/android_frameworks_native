@@ -37,6 +37,7 @@ enum {
     QUEUE_BUFFER,
     CANCEL_BUFFER,
     QUERY,
+    SET_BUFFERS_SIZE,
     CONNECT,
     DISCONNECT,
 };
@@ -112,7 +113,12 @@ public:
         if (result != NO_ERROR) {
             return result;
         }
-        memcpy(output, reply.readInplace(sizeof(*output)), sizeof(*output));
+        const void *out_data =reply.readInplace(sizeof(*output));
+        if(out_data != NULL) {
+            memcpy(output, out_data, sizeof(*output));
+        } else {
+            return BAD_VALUE;
+        }
         result = reply.readInt32();
         return result;
     }
@@ -149,7 +155,12 @@ public:
         if (result != NO_ERROR) {
             return result;
         }
-        memcpy(output, reply.readInplace(sizeof(*output)), sizeof(*output));
+        const void *out_data =reply.readInplace(sizeof(*output));
+        if(out_data != NULL) {
+            memcpy(output, out_data, sizeof(*output));
+        } else {
+            return BAD_VALUE;
+        }
         result = reply.readInt32();
         return result;
     }
@@ -165,6 +176,19 @@ public:
         result = reply.readInt32();
         return result;
     }
+
+    virtual status_t setBuffersSize(int size) {
+        Parcel data, reply;
+        data.writeInterfaceToken(IGraphicBufferProducer::getInterfaceDescriptor());
+        data.writeInt32(size);
+        status_t result = remote()->transact(SET_BUFFERS_SIZE, data, &reply);
+        if (result != NO_ERROR) {
+            return result;
+        }
+        result = reply.readInt32();
+        return result;
+    }
+
 };
 
 IMPLEMENT_META_INTERFACE(GraphicBufferProducer, "android.gui.IGraphicBufferProducer");
@@ -237,6 +261,13 @@ status_t BnGraphicBufferProducer::onTransact(
             int what = data.readInt32();
             int res = query(what, &value);
             reply->writeInt32(value);
+            reply->writeInt32(res);
+            return NO_ERROR;
+        } break;
+        case SET_BUFFERS_SIZE: {
+            CHECK_INTERFACE(IGraphicBufferProducer, data, reply);
+            int size = data.readInt32();
+            status_t res = setBuffersSize(size);
             reply->writeInt32(res);
             return NO_ERROR;
         } break;

@@ -37,9 +37,6 @@ LOCAL_SRC_FILES:= \
 LOCAL_CFLAGS:= -DLOG_TAG=\"SurfaceFlinger\"
 LOCAL_CFLAGS += -DGL_GLEXT_PROTOTYPES -DEGL_EGLEXT_PROTOTYPES
 
-ifeq ($(TARGET_BOARD_PLATFORM),omap3)
-	LOCAL_CFLAGS += -DNO_RGBX_8888
-endif
 ifeq ($(TARGET_BOARD_PLATFORM),omap4)
 	LOCAL_CFLAGS += -DHAS_CONTEXT_PRIORITY
 endif
@@ -61,6 +58,10 @@ endif
 
 ifeq ($(TARGET_RUNNING_WITHOUT_SYNC_FRAMEWORK),true)
     LOCAL_CFLAGS += -DRUNNING_WITHOUT_SYNC_FRAMEWORK
+endif
+
+ifeq ($(BOARD_USE_MHEAP_SCREENSHOT),true)
+    LOCAL_CFLAGS += -DUSE_MHEAP_SCREENSHOT
 endif
 
 # See build/target/board/generic/BoardConfig.mk for a description of this setting.
@@ -97,6 +98,22 @@ LOCAL_SHARED_LIBRARIES := \
 	libbinder \
 	libui \
 	libgui
+
+ifeq ($(BOARD_USES_SAMSUNG_HDMI),true)
+        LOCAL_CFLAGS += -DSAMSUNG_HDMI_SUPPORT
+        LOCAL_SHARED_LIBRARIES += libTVOut libhdmiclient
+        LOCAL_C_INCLUDES += hardware/samsung/$(TARGET_BOARD_PLATFORM)/libhdmi/libhdmiservice
+        LOCAL_C_INCLUDES += hardware/samsung/$(TARGET_BOARD_PLATFORM)/include
+endif
+
+ifeq ($(TARGET_USES_QCOM_BSP), true)
+ifneq ($(TARGET_QCOM_DISPLAY_VARIANT),)
+    LOCAL_C_INCLUDES += hardware/qcom/display-$(TARGET_QCOM_DISPLAY_VARIANT)/libgralloc
+else
+    LOCAL_C_INCLUDES += hardware/qcom/display/$(TARGET_BOARD_PLATFORM)/libgralloc
+endif
+    LOCAL_CFLAGS += -DQCOM_BSP
+endif
 
 LOCAL_MODULE:= libsurfaceflinger
 
