@@ -17,35 +17,29 @@
 #ifndef ANDROID_GUI_BUFFERQUEUE_H
 #define ANDROID_GUI_BUFFERQUEUE_H
 
-#include <EGL/egl.h>
-#include <EGL/eglext.h>
-
-#include <binder/IBinder.h>
-
-#include <gui/IConsumerListener.h>
-#include <gui/IGraphicBufferAlloc.h>
-#include <gui/IGraphicBufferProducer.h>
+#include <gui/BufferQueueDefs.h>
 #include <gui/IGraphicBufferConsumer.h>
+#include <gui/IGraphicBufferProducer.h>
+#include <gui/IConsumerListener.h>
 
-#include <ui/Fence.h>
-#include <ui/GraphicBuffer.h>
-
-#include <utils/String8.h>
-#include <utils/Vector.h>
-#include <utils/threads.h>
+// These are only required to keep other parts of the framework with incomplete
+// dependencies building successfully
+#include <gui/IGraphicBufferAlloc.h>
 
 namespace android {
-// ----------------------------------------------------------------------------
 
-class BufferQueue : public BnGraphicBufferProducer,
-                    public BnGraphicBufferConsumer,
-                    private IBinder::DeathRecipient {
+class BufferQueue {
 public:
-    enum { MIN_UNDEQUEUED_BUFFERS = 2 };
-    enum { NUM_BUFFER_SLOTS = 32 };
-    enum { NO_CONNECTED_API = 0 };
-    enum { INVALID_BUFFER_SLOT = -1 };
-    enum { STALE_BUFFER_SLOT = 1, NO_BUFFER_AVAILABLE, PRESENT_LATER };
+    // BufferQueue will keep track of at most this value of buffers.
+    // Attempts at runtime to increase the number of buffers past this will fail.
+    enum { NUM_BUFFER_SLOTS = BufferQueueDefs::NUM_BUFFER_SLOTS };
+    // Used as a placeholder slot# when the value isn't pointing to an existing buffer.
+    enum { INVALID_BUFFER_SLOT = IGraphicBufferConsumer::BufferItem::INVALID_BUFFER_SLOT };
+    // Alias to <IGraphicBufferConsumer.h> -- please scope from there in future code!
+    enum {
+        NO_BUFFER_AVAILABLE = IGraphicBufferConsumer::NO_BUFFER_AVAILABLE,
+        PRESENT_LATER = IGraphicBufferConsumer::PRESENT_LATER,
+    };
 
     // When in async mode we reserve two slots in order to guarantee that the
     // producer and consumer can run asynchronously.
@@ -53,6 +47,7 @@ public:
 
     // for backward source compatibility
     typedef ::android::ConsumerListener ConsumerListener;
+    typedef IGraphicBufferConsumer::BufferItem BufferItem;
 
     // ProxyConsumerListener is a ConsumerListener implementation that keeps a weak
     // reference to the actual consumer object.  It forwards all calls to that
@@ -69,12 +64,12 @@ public:
         virtual ~ProxyConsumerListener();
         virtual void onFrameAvailable();
         virtual void onBuffersReleased();
+        virtual void onSidebandStreamChanged();
     private:
         // mConsumerListener is a weak reference to the IConsumerListener.  This is
         // the raison d'etre of ProxyConsumerListener.
         wp<ConsumerListener> mConsumerListener;
     };
-
 
     // BufferQueue manages a pool of gralloc memory slots to be used by
     // producers and consumers. allocator is used to allocate all the
@@ -598,6 +593,12 @@ private:
    // mCurrentDirtyRegion is used to store the layer's dirty region
    // for it's buffer index which currently in use
    Rect mCurrentDirtyRegion;
+    static void createBufferQueue(sp<IGraphicBufferProducer>* outProducer,
+            sp<IGraphicBufferConsumer>* outConsumer,
+            const sp<IGraphicBufferAlloc>& allocator = NULL);
+
+private:
+    BufferQueue(); // Create through createBufferQueue
 };
 
 // ----------------------------------------------------------------------------

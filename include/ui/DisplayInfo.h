@@ -19,6 +19,7 @@
 
 #include <stdint.h>
 #include <sys/types.h>
+#include <utils/Timers.h>
 
 #include <ui/PixelFormat.h>
 
@@ -38,6 +39,8 @@ struct DisplayInfo {
     // TODO: this needs to go away (currently needed only by webkit)
     PixelFormatInfo pixelFormatInfo;
 #endif
+    nsecs_t appVsyncOffset;
+    nsecs_t presentationDeadline;
 };
 
 /* Display orientations as defined in Surface.java and ISurfaceComposer.h. */

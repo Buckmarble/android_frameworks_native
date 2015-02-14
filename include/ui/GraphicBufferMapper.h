@@ -54,6 +54,14 @@ public:
     status_t getphys(buffer_handle_t handle, void** paddr);
 #endif
 
+    status_t lockAsync(buffer_handle_t handle,
+            int usage, const Rect& bounds, void** vaddr, int fenceFd);
+
+    status_t lockAsyncYCbCr(buffer_handle_t handle,
+            int usage, const Rect& bounds, android_ycbcr *ycbcr, int fenceFd);
+
+    status_t unlockAsync(buffer_handle_t handle, int *fenceFd);
+    
     // dumps information about the mapping of this handle
     void dump(buffer_handle_t handle);
 
